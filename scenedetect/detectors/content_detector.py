@@ -61,6 +61,7 @@ class ContentDetector(SceneDetector):
         self.last_hsv = None
         self._metric_keys = ['content_val', 'delta_hue', 'delta_sat', 'delta_lum']
         self.cli_name = 'detect-content'
+        self.cut = False
 
 
     def process_frame(self, frame_num, frame_img):
@@ -87,6 +88,9 @@ class ContentDetector(SceneDetector):
         # Initialize last scene cut point at the beginning of the frames of interest.
         if self.last_scene_cut is None:
             self.last_scene_cut = frame_num
+
+        if frame_num - self.last_scene_cut >= self.min_scene_len and self.cut:
+            cut_list.append(self.last_scene_cut)
 
         # We can only start detecting once we have a frame to compare with.
         if self.last_frame is not None:
@@ -129,7 +133,7 @@ class ContentDetector(SceneDetector):
             # the minimum scene length has been reached (otherwise it is ignored).
             if delta_hsv_avg >= self.threshold and (
                     (frame_num - self.last_scene_cut) >= self.min_scene_len):
-                cut_list.append(frame_num)
+                self.cut = True
                 self.last_scene_cut = frame_num
 
             if self.last_frame is not None and self.last_frame is not _unused:
